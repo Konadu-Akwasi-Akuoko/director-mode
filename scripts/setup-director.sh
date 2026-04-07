@@ -10,6 +10,9 @@ set -euo pipefail
 TMUX_BIN="/opt/homebrew/bin/tmux"
 TMUX_SOCKET="${TMUX%%,*}"
 
+# Derive plugin root from this script's location (scripts/ -> plugin root)
+PLUGIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
 WORKER_TARGET="${1:?Usage: setup-director.sh WORKER_SESSION_NAME TASK [--sequencing]}"
 TASK="${2:?Usage: setup-director.sh WORKER_SESSION_NAME TASK [--sequencing]}"
 
@@ -72,7 +75,7 @@ else
 fi
 
 # Merge in the director guard hook
-echo "$EXISTING" | jq --arg guard "${CLAUDE_PLUGIN_ROOT}/hooks/director-guard.sh" '
+echo "$EXISTING" | jq --arg guard "${PLUGIN_ROOT}/hooks/director-guard.sh" '
   .hooks.PreToolUse = [{
     "matcher": "Read|Write|Edit|Bash|MultiEdit",
     "hooks": [{
