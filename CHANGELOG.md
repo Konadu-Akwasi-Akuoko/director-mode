@@ -4,6 +4,12 @@ All notable changes to the director-mode plugin are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] - 2026-04-07
+
+### Fixed
+
+- Guard hook and setup script no longer depend on `CLAUDE_PLUGIN_ROOT` env var, which is unavailable at hook runtime. Both now derive the plugin root from the script's own filesystem location (`$0`). Fixes the guard blocking its own scripts (`send-to-worker.sh`, `capture-worker.sh`, `update-subtask-status.sh`).
+
 ## [0.2.1] - 2026-04-07
 
 ### Fixed
