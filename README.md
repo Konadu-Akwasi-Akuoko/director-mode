@@ -241,3 +241,11 @@ rm ~/.claude/director-mode.local.md
 - **No Windows support** — tmux is not available on Windows natively.
 - **30-second polling** — The director checks the worker every 30 seconds. Fast-completing tasks may have unnecessary wait time.
 - **Single worker** — The director manages one worker session at a time.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Konadu-Akwasi-Akuoko/director-mode&type=Date)](https://star-history.com/#Konadu-Akwasi-Akuoko/director-mode&Date)
+
+## License
+
+[MIT](LICENSE)
