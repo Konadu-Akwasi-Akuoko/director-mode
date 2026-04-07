@@ -1,7 +1,7 @@
 ---
 name: director-mode
 description: "Orchestrate another Claude Code instance via tmux. This skill should be used when the user says 'director mode', 'orchestrate', 'drive the other claude', 'manage the worker', 'delegate to the other session', 'multi-session', 'send this to the other claude', 'supervise the worker', or wants one Claude session to autonomously direct another."
-version: 0.2.2
+version: 0.2.3
 ---
 
 # Director Mode

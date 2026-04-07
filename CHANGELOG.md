@@ -4,6 +4,12 @@ All notable changes to the director-mode plugin are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [0.2.3] - 2026-04-07
+
+### Fixed
+
+- Converted version-bump PreToolUse hook from prompt-type to command-type. Prompt hooks cannot run `git log` to verify commit state, causing every `git push` to be blocked. New command hook (`scripts/check-version-bump.sh`) runs actual shell logic.
+
 ## [0.2.2] - 2026-04-07
 
 ### Fixed
