@@ -4,6 +4,13 @@ All notable changes to the director-mode plugin are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-04-07
+
+### Fixed
+
+- Moved version-bump PreToolUse hook from plugin `hooks.json` (ships to users) to project `.claude/settings.json` (dev workflow only)
+- Cleaned up `hooks.json` to only contain the description (guard is dynamic)
+
 ## [0.2.0] - 2026-04-07
 
 ### Breaking

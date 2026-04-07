@@ -1,6 +1,6 @@
 {
   "name": "director-mode",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Director mode: one Claude Code instance drives another via tmux, acting as a human-in-the-loop proxy for autonomous multi-session orchestration.",
   "author": {
     "name": "Akwasi Konadu Akuoko"
