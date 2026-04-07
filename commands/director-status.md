@@ -41,7 +41,9 @@ Show the last 20 lines of the worker's output to give the user a quick view of w
 
 ## Step 4: Report
 
-Format a concise status report:
+Parse the `sequencing` field from the state file to determine if task sequencing is active.
+
+**Without sequencing**, format a concise status report:
 
 ```
 Director Mode Status
@@ -55,3 +57,26 @@ Last check: <timestamp>
 Worker snapshot (last 20 lines):
 <captured output>
 ```
+
+**With sequencing**, include sub-task progress. Read the `## Sub-tasks` section from the state file body and include it in the report:
+
+```
+Director Mode Status
+====================
+Worker:    <session-name>
+Phase:     <current-phase>
+Iteration: <N>
+Uptime:    <duration>
+Last check: <timestamp>
+
+Task Sequencing: Sub-task <current+1> of <total> [<status>]
+  1. [DONE] Set up project structure
+  2. [IN_PROGRESS] Implement auth endpoints
+  3. [PENDING] Add CRUD operations
+  4. [PENDING] Write tests
+
+Worker snapshot (last 20 lines):
+<captured output>
+```
+
+If `clearing` is `true`, append "Clearing worker context before next sub-task..." to the phase line.

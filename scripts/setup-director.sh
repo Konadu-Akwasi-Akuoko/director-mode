@@ -10,8 +10,14 @@ set -euo pipefail
 TMUX_BIN="/opt/homebrew/bin/tmux"
 TMUX_SOCKET="${TMUX%%,*}"
 
-WORKER_TARGET="${1:?Usage: setup-director.sh WORKER_SESSION_NAME}"
-TASK="${2:?Usage: setup-director.sh WORKER_SESSION_NAME TASK}"
+WORKER_TARGET="${1:?Usage: setup-director.sh WORKER_SESSION_NAME TASK [--sequencing]}"
+TASK="${2:?Usage: setup-director.sh WORKER_SESSION_NAME TASK [--sequencing]}"
+
+# Check for --sequencing flag
+SEQUENCING="false"
+if [[ "${3:-}" == "--sequencing" ]]; then
+  SEQUENCING="true"
+fi
 
 # Set tmux window name for easy identification
 "$TMUX_BIN" -S "$TMUX_SOCKET" rename-window "director-mode"
@@ -34,11 +40,23 @@ iteration: 0
 started_at: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 last_check: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 session_id: "${CLAUDE_CODE_SESSION_ID:-unknown}"
+sequencing: $SEQUENCING
+current_subtask: 0
+subtask_count: 0
+retry_count: 0
+max_retries: 1
+clearing: false
 ---
 
 Director mode active.
 Worker: $WORKER_TARGET
 Task: $TASK
+
+## Sub-tasks
+(none — populated during director-start if task decomposition is active)
+
+## Completed Summaries
+(populated as sub-tasks complete)
 EOF
 
 echo "Director mode initialized."

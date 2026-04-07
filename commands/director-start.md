@@ -35,6 +35,38 @@ Once the user picks a worker session name, run:
 
 Replace `WORKER_SESSION_NAME` with the user's choice and `TASK_TEXT` with the task from $ARGUMENTS.
 
+## Step 3.5: Decompose Task (if complex)
+
+Evaluate whether the task is complex enough to warrant sequencing. A task warrants sequencing if it has:
+- Multiple distinct deliverables (e.g., "auth + CRUD + tests")
+- Work spanning different domains (frontend, backend, database, tests)
+- Enough scope that the worker might exhaust its context window
+
+If sequencing is warranted:
+
+1. Break the task into 2-7 ordered sub-tasks. Each sub-task should be self-contained and produce a concrete deliverable.
+2. Show the sub-task list to the user and ask for confirmation.
+3. Re-run setup with the `--sequencing` flag:
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/scripts/setup-director.sh" "WORKER_SESSION_NAME" "TASK_TEXT" --sequencing
+   ```
+4. Update the state file's `subtask_count` field:
+   ```bash
+   sed -i '' "s/^subtask_count: .*/subtask_count: N/" "$HOME/.claude/director-mode.local.md"
+   ```
+5. Replace the `## Sub-tasks` section in the state file body with the numbered sub-task list, each prefixed with `[PENDING]`:
+   ```
+   ## Sub-tasks
+   1. [PENDING] Set up project structure and dependencies
+   2. [PENDING] Implement authentication endpoints
+   3. [PENDING] Add CRUD operations
+   4. [PENDING] Write tests
+   ```
+6. Mark the first sub-task as `[IN_PROGRESS]`:
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/scripts/update-subtask-status.sh" 1 IN_PROGRESS
+   ```
+
 ## Step 4: Send Task to Worker
 
 First, capture the worker pane to check its current state:
@@ -43,13 +75,19 @@ First, capture the worker pane to check its current state:
 "${CLAUDE_PLUGIN_ROOT}/scripts/capture-worker.sh" "WORKER_SESSION_NAME"
 ```
 
-Then send the task to the worker. If the worker is at an idle prompt, send the task directly:
+Then send the task to the worker. If the worker is at an idle prompt:
 
+**Without sequencing** — send the full task directly:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "WORKER_SESSION_NAME" "TASK_TEXT"
 ```
 
-If this is a complex task, instruct the worker to plan first by prepending "Plan first, then implement: " to the task.
+**With sequencing** — send only sub-task 1, prefixed with context:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "WORKER_SESSION_NAME" "Sub-task 1 of N: <sub-task 1 description>. Overall goal: TASK_TEXT"
+```
+
+If this is a complex task (sequencing or not), instruct the worker to plan first by prepending "Plan first, then implement: " to the message.
 
 ## Step 5: Start the Director Loop
 

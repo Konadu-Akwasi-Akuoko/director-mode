@@ -83,13 +83,91 @@ If the output looks stuck (identical to last capture for 3+ iterations), send:
 ```
 
 ### DONE
-Worker completed the task. Capture final output and report a summary to the user.
+
+Check if sequencing is active by reading the `sequencing` field from the state file.
+
+**Without sequencing:** Worker completed the task. Capture final output and report a summary to the user.
+
+**With sequencing:** The current sub-task is complete. Transition to the CLEARING phase:
+
+1. Capture a brief completion summary from the worker's output (2-3 sentences of what was accomplished)
+2. Update the sub-task status and record the summary:
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/scripts/update-subtask-status.sh" SUBTASK_NUM DONE "completion summary here"
+   ```
+3. Check if this was the last sub-task. If `current_subtask + 1 >= subtask_count`, set `phase: all_done` and report full completion to the user. Stop.
+4. Otherwise, send `/clear` to the worker:
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "/clear"
+   ```
+5. Update state file:
+   ```bash
+   sed -i '' "s/^clearing: .*/clearing: true/" "$HOME/.claude/director-mode.local.md"
+   sed -i '' "s/^phase: .*/phase: \"clearing\"/" "$HOME/.claude/director-mode.local.md"
+   ```
+
+### CLEARING
+
+This phase handles the transition between sub-tasks during sequencing.
+
+1. Capture the worker pane:
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/scripts/capture-worker.sh"
+   ```
+2. Check if the worker shows an idle prompt (`>`, "How can I help?").
+3. **If idle:**
+   - Set `clearing: false`:
+     ```bash
+     sed -i '' "s/^clearing: .*/clearing: false/" "$HOME/.claude/director-mode.local.md"
+     ```
+   - Advance to the next sub-task:
+     ```bash
+     sed -i '' "s/^current_subtask: .*/current_subtask: NEXT_INDEX/" "$HOME/.claude/director-mode.local.md"
+     ```
+   - Mark the next sub-task as IN_PROGRESS:
+     ```bash
+     "${CLAUDE_PLUGIN_ROOT}/scripts/update-subtask-status.sh" NEXT_NUM IN_PROGRESS
+     ```
+   - Read the `## Completed Summaries` section from the state file to build context
+   - Send the next sub-task to the worker with context from prior completions:
+     ```bash
+     "${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "Sub-task N of M: <description>. Context from completed sub-tasks: <summaries>"
+     ```
+   - Update phase back to active monitoring:
+     ```bash
+     sed -i '' "s/^phase: .*/phase: \"idle\"/" "$HOME/.claude/director-mode.local.md"
+     ```
+4. **If not idle:** Wait. If the worker has not become idle after 3 consecutive CLEARING iterations, resend `/clear`:
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "/clear"
+   ```
 
 ### ERROR
-Worker hit an error. Analyze the error and send corrective guidance:
+
+Check if sequencing is active.
+
+**Without sequencing:** Analyze the error and send corrective guidance:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "Error detected: [brief description]. Try: [suggestion]."
 ```
+
+**With sequencing:** Handle sub-task failure:
+
+1. Increment `retry_count`:
+   ```bash
+   CURRENT_RETRY=$(sed -n 's/^retry_count: //p' "$HOME/.claude/director-mode.local.md")
+   NEW_RETRY=$((CURRENT_RETRY + 1))
+   sed -i '' "s/^retry_count: .*/retry_count: $NEW_RETRY/" "$HOME/.claude/director-mode.local.md"
+   ```
+2. Read `max_retries` from state file.
+3. **If retry_count <= max_retries:** Send `/clear` to the worker, then retry the same sub-task.
+4. **If retry_count > max_retries:** Escalate to the user. Report which sub-task failed and offer options:
+   - **Skip:** Mark sub-task `[FAILED]` and advance to the next one
+   - **Stop:** Halt sequencing entirely, report partial progress
+   Update sub-task status:
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/scripts/update-subtask-status.sh" SUBTASK_NUM FAILED
+   ```
 
 ### PERMISSION_PROMPT
 Worker needs tool permission. Send approval:
