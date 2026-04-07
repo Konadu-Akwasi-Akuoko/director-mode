@@ -11,7 +11,7 @@ You are the director. Run ONE check iteration on your worker.
 ## Step 1: Verify Active
 
 ```bash
-test -f "$HOME/.claude/director-mode.local.md" && echo "ACTIVE" || echo "NOT_ACTIVE"
+test -f "./director-mode.local.md" && echo "ACTIVE" || echo "NOT_ACTIVE"
 ```
 
 If NOT_ACTIVE, say "Director mode is not active." and stop.
@@ -21,7 +21,7 @@ If NOT_ACTIVE, say "Director mode is not active." and stop.
 Read the state file:
 
 ```bash
-cat "$HOME/.claude/director-mode.local.md"
+cat "./director-mode.local.md"
 ```
 
 Extract: worker_target, task, phase, iteration.
@@ -102,8 +102,8 @@ Check if sequencing is active by reading the `sequencing` field from the state f
    ```
 5. Update state file:
    ```bash
-   sed -i '' "s/^clearing: .*/clearing: true/" "$HOME/.claude/director-mode.local.md"
-   sed -i '' "s/^phase: .*/phase: \"clearing\"/" "$HOME/.claude/director-mode.local.md"
+   sed -i '' "s/^clearing: .*/clearing: true/" "./director-mode.local.md"
+   sed -i '' "s/^phase: .*/phase: \"clearing\"/" "./director-mode.local.md"
    ```
 
 ### CLEARING
@@ -118,11 +118,11 @@ This phase handles the transition between sub-tasks during sequencing.
 3. **If idle:**
    - Set `clearing: false`:
      ```bash
-     sed -i '' "s/^clearing: .*/clearing: false/" "$HOME/.claude/director-mode.local.md"
+     sed -i '' "s/^clearing: .*/clearing: false/" "./director-mode.local.md"
      ```
    - Advance to the next sub-task:
      ```bash
-     sed -i '' "s/^current_subtask: .*/current_subtask: NEXT_INDEX/" "$HOME/.claude/director-mode.local.md"
+     sed -i '' "s/^current_subtask: .*/current_subtask: NEXT_INDEX/" "./director-mode.local.md"
      ```
    - Mark the next sub-task as IN_PROGRESS:
      ```bash
@@ -135,7 +135,7 @@ This phase handles the transition between sub-tasks during sequencing.
      ```
    - Update phase back to active monitoring:
      ```bash
-     sed -i '' "s/^phase: .*/phase: \"idle\"/" "$HOME/.claude/director-mode.local.md"
+     sed -i '' "s/^phase: .*/phase: \"idle\"/" "./director-mode.local.md"
      ```
 4. **If not idle:** Wait. If the worker has not become idle after 3 consecutive CLEARING iterations, resend `/clear`:
    ```bash
@@ -155,9 +155,9 @@ Check if sequencing is active.
 
 1. Increment `retry_count`:
    ```bash
-   CURRENT_RETRY=$(sed -n 's/^retry_count: //p' "$HOME/.claude/director-mode.local.md")
+   CURRENT_RETRY=$(sed -n 's/^retry_count: //p' "./director-mode.local.md")
    NEW_RETRY=$((CURRENT_RETRY + 1))
-   sed -i '' "s/^retry_count: .*/retry_count: $NEW_RETRY/" "$HOME/.claude/director-mode.local.md"
+   sed -i '' "s/^retry_count: .*/retry_count: $NEW_RETRY/" "./director-mode.local.md"
    ```
 2. Read `max_retries` from state file.
 3. **If retry_count <= max_retries:** Send `/clear` to the worker, then retry the same sub-task.
@@ -180,9 +180,9 @@ Worker needs tool permission. Send approval:
 Increment the iteration counter and update phase/timestamp:
 
 ```bash
-sed -i '' "s/^phase: .*/phase: \"NEW_PHASE\"/" "$HOME/.claude/director-mode.local.md"
-sed -i '' "s/^last_check: .*/last_check: \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"/" "$HOME/.claude/director-mode.local.md"
-sed -i '' "s/^iteration: .*/iteration: NEW_COUNT/" "$HOME/.claude/director-mode.local.md"
+sed -i '' "s/^phase: .*/phase: \"NEW_PHASE\"/" "./director-mode.local.md"
+sed -i '' "s/^last_check: .*/last_check: \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"/" "./director-mode.local.md"
+sed -i '' "s/^iteration: .*/iteration: NEW_COUNT/" "./director-mode.local.md"
 ```
 
 ## Step 7: Report

@@ -12,7 +12,7 @@ SUBTASK_NUM="${1:?Usage: update-subtask-status.sh <number> <PENDING|IN_PROGRESS|
 NEW_STATUS="${2:?Usage: update-subtask-status.sh <number> <PENDING|IN_PROGRESS|DONE|FAILED> [summary]}"
 SUMMARY="${3:-}"
 
-STATE_FILE="$HOME/.claude/director-mode.local.md"
+STATE_FILE="./director-mode.local.md"
 
 if [[ ! -f "$STATE_FILE" ]]; then
   echo "ERROR: State file not found at $STATE_FILE" >&2
@@ -30,7 +30,6 @@ esac
 
 # Update the sub-task line: "N. [OLD_STATUS] description" -> "N. [NEW_STATUS] description"
 # Matches patterns like "1. [PENDING] Set up project" or "1. **[PENDING]** Set up project"
-sed -i '' "s/^${SUBTASK_NUM}\. \[.*\]/&/" "$STATE_FILE"
 sed -i '' "s/^${SUBTASK_NUM}\. \[[A-Z_]*\]/${SUBTASK_NUM}. [${NEW_STATUS}]/" "$STATE_FILE"
 
 # Update YAML frontmatter fields

@@ -13,7 +13,7 @@ TMUX_SOCKET="${TMUX%%,*}"
 if [[ -n "${1:-}" ]]; then
   WORKER_TARGET="$1"
 else
-  STATE_FILE="$HOME/.claude/director-mode.local.md"
+  STATE_FILE="./director-mode.local.md"
   if [[ ! -f "$STATE_FILE" ]]; then
     echo "ERROR: No active director session and no target specified." >&2
     exit 1

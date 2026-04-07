@@ -2,24 +2,33 @@
 
 # Director Guard Hook (PreToolUse)
 # Prevents the director from directly interacting with project files.
-# Only active when director-mode state file exists.
+# Only active when running in the "director-mode" tmux window.
 #
-# ALLOWS: tmux commands, state file access, CLAUDE.md reads, memory reads
+# ALLOWS: tmux commands, state file access, CLAUDE.md reads, memory reads, plugin source reads
 # BLOCKS: Read/Write/Edit on project source files, non-tmux Bash commands
 
 set -euo pipefail
 
-STATE_FILE="$HOME/.claude/director-mode.local.md"
+STATE_FILE="./director-mode.local.md"
 
 # If director mode is not active, allow everything
 if [[ ! -f "$STATE_FILE" ]]; then
   exit 0
 fi
 
-# Verify this session owns the director state
-STATE_SESSION=$(sed -n '/^---$/,/^---$/{ /^---$/d; p; }' "$STATE_FILE" | grep '^session_id:' | sed 's/session_id: *//' | sed 's/^"\(.*\)"$/\1/')
-if [[ -n "$STATE_SESSION" ]] && [[ "$STATE_SESSION" != "${CLAUDE_CODE_SESSION_ID:-}" ]]; then
-  # Different session owns the director state — do not guard this session
+TMUX_BIN="/opt/homebrew/bin/tmux"
+
+# If not in tmux, allow everything
+if [[ -z "${TMUX:-}" ]]; then
+  exit 0
+fi
+
+TMUX_SOCKET="${TMUX%%,*}"
+
+# Only guard the director window (named "director-mode" by setup-director.sh)
+# Worker, third sessions, etc. pass through freely
+CURRENT_WINDOW=$("$TMUX_BIN" -S "$TMUX_SOCKET" display-message -p '#W' 2>/dev/null || echo "")
+if [[ "$CURRENT_WINDOW" != "director-mode" ]]; then
   exit 0
 fi
 
@@ -29,13 +38,7 @@ HOOK_INPUT=$(cat)
 TOOL_NAME=$(echo "$HOOK_INPUT" | jq -r '.tool_name // ""')
 TOOL_INPUT=$(echo "$HOOK_INPUT" | jq -r '.tool_input // {} | tostring')
 
-# Extract the worker's project path from state file
-WORKER_TARGET=$(sed -n '/^---$/,/^---$/{ /^---$/d; p; }' "$STATE_FILE" | grep '^worker_target:' | sed 's/worker_target: *//' | sed 's/^"\(.*\)"$/\1/')
-
 # --- ALLOW LIST ---
-
-# Always allow: Agent tool (subagent spawning)
-# The matcher only fires for Read|Write|Edit|Bash|MultiEdit, so Agent is never checked.
 
 case "$TOOL_NAME" in
   Bash)
@@ -47,7 +50,7 @@ case "$TOOL_NAME" in
     fi
 
     # Allow commands on director state files
-    if echo "$COMMAND" | grep -qE '(director-mode\.local\.md|ralph-loop\.local\.md|\.claude/)'; then
+    if echo "$COMMAND" | grep -qE '(director-mode\.local\.md|ralph-loop\.local\.md)'; then
       exit 0
     fi
 
@@ -62,7 +65,17 @@ case "$TOOL_NAME" in
     fi
 
     # Allow test/cat on state files
-    if echo "$COMMAND" | grep -qE '^(test|cat) .*(director-mode|ralph-loop|\.claude/)'; then
+    if echo "$COMMAND" | grep -qE '^(test|cat) .*(director-mode|ralph-loop)'; then
+      exit 0
+    fi
+
+    # Allow date commands (used for timestamp updates)
+    if echo "$COMMAND" | grep -qE '^date '; then
+      exit 0
+    fi
+
+    # Allow cleanup script
+    if echo "$COMMAND" | grep -q "cleanup-director"; then
       exit 0
     fi
 
@@ -94,6 +107,11 @@ case "$TOOL_NAME" in
 
     # Allow reading plugin files
     if echo "$FILE_PATH" | grep -q '\.claude/plugins/'; then
+      exit 0
+    fi
+
+    # Allow reading the plugin's own source files
+    if echo "$FILE_PATH" | grep -q "${CLAUDE_PLUGIN_ROOT:-__no_match__}"; then
       exit 0
     fi
 

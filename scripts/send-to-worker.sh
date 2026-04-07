@@ -18,7 +18,7 @@ if [[ $# -ge 2 ]]; then
   shift
   TEXT="$*"
 elif [[ $# -eq 1 ]]; then
-  STATE_FILE="$HOME/.claude/director-mode.local.md"
+  STATE_FILE="./director-mode.local.md"
   if [[ ! -f "$STATE_FILE" ]]; then
     echo "ERROR: No active director session and no target specified." >&2
     exit 1

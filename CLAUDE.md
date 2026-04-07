@@ -11,7 +11,7 @@
 
 - All scripts: `set -euo pipefail`
 - Read worker target from argument, fall back to state file
-- State file: `$HOME/.claude/director-mode.local.md`
+- State file: `./director-mode.local.md` (in project CWD, not `~/.claude/` which triggers sensitive-file dialogs)
 
 ## State File
 

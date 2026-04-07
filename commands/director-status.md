@@ -11,7 +11,7 @@ Show the current state of director mode:
 ## Step 1: Check State
 
 ```bash
-test -f "$HOME/.claude/director-mode.local.md" && echo "ACTIVE" || echo "NOT_ACTIVE"
+test -f "./director-mode.local.md" && echo "ACTIVE" || echo "NOT_ACTIVE"
 ```
 
 If NOT_ACTIVE, tell the user "No active director session." and stop.
@@ -19,7 +19,7 @@ If NOT_ACTIVE, tell the user "No active director session." and stop.
 ## Step 2: Read State File
 
 ```bash
-cat "$HOME/.claude/director-mode.local.md"
+cat "./director-mode.local.md"
 ```
 
 Parse and display:
