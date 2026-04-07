@@ -52,7 +52,7 @@ If sequencing is warranted:
    ```
 4. Update the state file's `subtask_count` field:
    ```bash
-   sed -i '' "s/^subtask_count: .*/subtask_count: N/" "$HOME/.claude/director-mode.local.md"
+   sed -i '' "s/^subtask_count: .*/subtask_count: N/" "./director-mode.local.md"
    ```
 5. Replace the `## Sub-tasks` section in the state file body with the numbered sub-task list, each prefixed with `[PENDING]`:
    ```
@@ -67,24 +67,76 @@ If sequencing is warranted:
    "${CLAUDE_PLUGIN_ROOT}/scripts/update-subtask-status.sh" 1 IN_PROGRESS
    ```
 
+## Step 3.75: Gather Requirements
+
+Before sending the task to the worker, proactively identify and resolve all ambiguities.
+This prevents the worker from stalling on questions while the user is away.
+
+### Read Project Context
+
+Read CLAUDE.md, package.json/pyproject.toml, README, and other project metadata to pre-answer common questions about conventions, tech stack, and architecture.
+
+### Identify Gaps
+
+Analyze the task (and sub-tasks if sequencing). Identify:
+1. Missing technical decisions (framework, library, architecture choices)
+2. Ambiguous requirements (scope, priorities, edge cases)
+3. Environment unknowns (database, deployment target, auth strategy)
+4. Style/convention gaps not covered by CLAUDE.md
+
+### Ask All Questions at Once
+
+If gaps remain after reading context, use AskUserQuestion to ask ALL questions in a single batch.
+Do not ask one at a time — batch them so the user can answer everything before stepping away.
+
+### Build Task Brief
+
+Compile: original task + CLAUDE.md conventions + user answers into a comprehensive task brief.
+Append the brief to the state file body under `## Task Brief`:
+
+```bash
+cat >> "./director-mode.local.md" <<'BRIEF'
+
+## Task Brief
+<compiled brief here>
+BRIEF
+```
+
+### Signal Readiness
+
+Tell the user: "I have everything I need. You can step away now --
+I will handle this autonomously and report results when done."
+
 ## Step 4: Send Task to Worker
 
-First, capture the worker pane to check its current state:
+First, rename both sessions for visual identification.
+
+Rename the worker's Claude Code session:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "WORKER_SESSION_NAME" "/rename WORKER"
+```
+
+Wait 3 seconds for the rename to process, then rename the director's own session:
+```
+/rename DIRECTOR
+```
+
+Now capture the worker pane to check its current state:
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/capture-worker.sh" "WORKER_SESSION_NAME"
 ```
 
-Then send the task to the worker. If the worker is at an idle prompt:
+Then send the task to the worker. Use the task brief from Step 3.75 (not the raw task) so the worker has full context. If the worker is at an idle prompt:
 
-**Without sequencing** — send the full task directly:
+**Without sequencing** — send the full task brief directly:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "WORKER_SESSION_NAME" "TASK_TEXT"
+"${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "WORKER_SESSION_NAME" "TASK_BRIEF_TEXT"
 ```
 
-**With sequencing** — send only sub-task 1, prefixed with context:
+**With sequencing** — send only sub-task 1, prefixed with context from the brief:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "WORKER_SESSION_NAME" "Sub-task 1 of N: <sub-task 1 description>. Overall goal: TASK_TEXT"
+"${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "WORKER_SESSION_NAME" "Sub-task 1 of N: <sub-task 1 description>. Overall goal: TASK_TEXT. Context: <relevant brief details>"
 ```
 
 If this is a complex task (sequencing or not), instruct the worker to plan first by prepending "Plan first, then implement: " to the message.

@@ -13,7 +13,7 @@ Gracefully shut down director mode:
 Check if director mode is active:
 
 ```bash
-test -f "$HOME/.claude/director-mode.local.md" && echo "ACTIVE" || echo "NOT_ACTIVE"
+test -f "./director-mode.local.md" && echo "ACTIVE" || echo "NOT_ACTIVE"
 ```
 
 If NOT_ACTIVE, tell the user "No active director session found." and stop.
@@ -23,10 +23,16 @@ If NOT_ACTIVE, tell the user "No active director session found." and stop.
 Read the state file to get the worker target and current phase:
 
 ```bash
-cat "$HOME/.claude/director-mode.local.md"
+cat "./director-mode.local.md"
 ```
 
-## Step 3: Notify Worker (Optional)
+## Step 3: Reset Worker Name and Notify
+
+Reset the worker's Claude Code session name, then send a stop message:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "/rename"
+```
 
 If the worker is mid-task, send a gentle stop message:
 
@@ -34,7 +40,12 @@ If the worker is mid-task, send a gentle stop message:
 "${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "Please finish your current step and then stop. The director is shutting down."
 ```
 
-## Step 4: Restore Tmux
+## Step 4: Restore Tmux and Director Name
+
+Reset the director's Claude Code session name:
+```
+/rename
+```
 
 Reset the tmux window name and status bar color:
 
@@ -45,10 +56,14 @@ Reset the tmux window name and status bar color:
 
 ## Step 5: Clean Up State
 
-Remove the state file:
+Remove the guard hook from project settings, then remove the state file:
 
 ```bash
-rm "$HOME/.claude/director-mode.local.md"
+"${CLAUDE_PLUGIN_ROOT}/scripts/cleanup-director.sh"
+```
+
+```bash
+rm "./director-mode.local.md"
 ```
 
 ## Step 6: Cancel Loop
@@ -56,7 +71,7 @@ rm "$HOME/.claude/director-mode.local.md"
 If a ralph-loop or loop is active, cancel it:
 
 ```bash
-test -f .claude/ralph-loop.local.md && rm .claude/ralph-loop.local.md || true
+test -f ./ralph-loop.local.md && rm ./ralph-loop.local.md || true
 ```
 
 Report: "Director mode stopped. Worker session is now unmanaged."
