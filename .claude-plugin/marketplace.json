@@ -1,0 +1,24 @@
+{
+  "name": "director-mode-marketplace",
+  "owner": {
+    "name": "Akwasi Konadu Akuoko",
+    "email": "konaduakwasiakuoko@gmail.com"
+  },
+  "metadata": {
+    "description": "Director mode: autonomous multi-session Claude Code orchestration via tmux",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "director-mode",
+      "source": ".",
+      "description": "One Claude Code instance drives another via tmux, acting as a human-in-the-loop proxy for autonomous multi-session orchestration.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Akwasi Konadu Akuoko"
+      },
+      "keywords": ["tmux", "orchestration", "autonomous", "director", "multi-session"],
+      "category": "automation"
+    }
+  ]
+}

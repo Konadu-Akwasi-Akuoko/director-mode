@@ -1,0 +1,17 @@
+{
+  "description": "Director mode guard hook — prevents the director from directly reading/writing project files or running non-tmux commands",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/director-guard.sh\"",
+            "timeout": 5
+          }
+        ],
+        "matcher": "Read|Write|Edit|Bash|MultiEdit"
+      }
+    ]
+  }
+}
