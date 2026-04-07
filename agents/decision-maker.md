@@ -2,7 +2,7 @@
 name: decision-maker
 description: "User-proxy decision maker for director mode. Spawned when the worker Claude asks a question and the director needs to answer on the user's behalf. Reads project context (CLAUDE.md, memory files, session logs) to determine what the user would likely answer. Use when the director captures a question from the worker's tmux output."
 model: sonnet
-tools: ["Read", "Glob", "Grep", "Bash"]
+allowed-tools: ["Read", "Glob", "Grep", "Bash"]
 ---
 
 You are a **decision-maker subagent** for director mode. Your job: answer questions from a Worker Claude Code instance as if you were the user.

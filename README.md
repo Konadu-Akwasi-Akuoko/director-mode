@@ -143,7 +143,7 @@ director-mode/
 ```
 /director-start ──> check-tmux-prereqs.sh
                 ──> list-tmux-sessions.sh
-                ──> setup-director.sh ──> creates ~/.claude/director-mode.local.md
+                ──> setup-director.sh ──> creates ./director-mode.local.md
                 ──> send-to-worker.sh
                 ──> /loop 30s /director-check
 
@@ -157,9 +157,9 @@ director-mode/
                 ──> tmux rename-window, reset status-style
                 ──> rm state file
 
-director-guard.sh (PreToolUse hook)
+director-guard.sh (PreToolUse hook — dynamically installed)
   ├── Fires on: Read, Write, Edit, Bash, MultiEdit
-  ├── Checks: state file exists AND session_id matches
+  ├── Checks: state file exists AND tmux window name is "director-mode"
   ├── Allows: tmux, plugin scripts, state files, CLAUDE.md, memory
   └── Blocks: everything else (project file access)
 ```
@@ -168,7 +168,7 @@ director-guard.sh (PreToolUse hook)
 
 ### Guard Hook Enforcement
 
-The guard hook is the core safety mechanism. Without it, the director could read/write project files directly, defeating the purpose of the two-session architecture. The hook uses session_id matching so it only guards the director session — the worker session (different session_id) is unaffected.
+The guard hook is the core safety mechanism. Without it, the director could read/write project files directly, defeating the purpose of the two-session architecture. The hook is dynamically installed into `.claude/settings.local.json` when director mode starts and removed when it stops — zero overhead when inactive. It uses tmux window name matching so it only guards the "director-mode" window — the worker and any other sessions pass through freely.
 
 ### Decision-Maker Delegation
 
@@ -197,9 +197,8 @@ Complex tasks are decomposed into 2-7 sub-tasks with `/clear` sent between each.
 The guard hook can be tested independently. First create a temporary state file so the hook activates, then pipe a simulated tool call:
 
 ```bash
-# Create a temporary state file with a matching session_id
-mkdir -p ~/.claude
-cat > ~/.claude/director-mode.local.md <<'EOF'
+# Create a temporary state file in CWD
+cat > ./director-mode.local.md <<'EOF'
 ---
 active: true
 worker_target: "test-worker"
@@ -219,12 +218,13 @@ clearing: false
 EOF
 
 # Simulate a blocked Read call — should output a JSON block decision
+# Note: must be in a tmux window named "director-mode" for the guard to activate
 echo '{"tool_name":"Read","tool_input":{"file_path":"/some/project/file.ts"}}' | \
-  CLAUDE_CODE_SESSION_ID=test \
+  TMUX="/tmp/tmux-test,1234,0" \
   bash hooks/director-guard.sh
 
 # Clean up
-rm ~/.claude/director-mode.local.md
+rm ./director-mode.local.md
 ```
 
 ### Task Sequencing Testing

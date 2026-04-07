@@ -1,6 +1,6 @@
 ---
 name: director-mode
-description: "Orchestrate another Claude Code instance via tmux. This skill should be used when the user says 'director mode', 'orchestrate', 'drive the other claude', 'manage the worker', or wants one Claude session to autonomously direct another."
+description: "Orchestrate another Claude Code instance via tmux. This skill should be used when the user says 'director mode', 'orchestrate', 'drive the other claude', 'manage the worker', 'delegate to the other session', 'multi-session', 'send this to the other claude', 'supervise the worker', or wants one Claude session to autonomously direct another."
 version: 0.1.0
 ---
 
@@ -67,6 +67,10 @@ Parse the captured output to determine the worker's current phase:
 
 The script handles `-l` (literal mode) and separate Enter keystrokes automatically.
 
+## Requirements Gathering
+
+Before sending the task to the worker, the director proactively reads project context (CLAUDE.md, package.json, etc.) and identifies all ambiguities. Any remaining questions are batched into a single prompt to the user. This produces a **task brief** — a compiled document with the original task + conventions + user answers — that gets sent to the worker instead of the raw task. This prevents the worker from stalling on unanswerable questions while the user is away. See `director-start.md` Step 3.75 for full details.
+
 ## Director Loop
 
 Each iteration of the director loop follows this cycle:
@@ -82,12 +86,12 @@ Each iteration of the director loop follows this cycle:
    - DONE: Capture final output, summarize results, consider stopping the loop
    - ERROR: Analyze error, send corrective guidance
    - PERMISSION_PROMPT: Send "y" for safe operations
-4. **Update state** — Update `~/.claude/director-mode.local.md` with current phase and timestamp
+4. **Update state** — Update `./director-mode.local.md` with current phase and timestamp
 5. **Yield** — Allow the loop to proceed to the next iteration
 
 ## State File
 
-Located at `~/.claude/director-mode.local.md`. YAML frontmatter tracks:
+Located at `./director-mode.local.md`. YAML frontmatter tracks:
 
 ```yaml
 ---
@@ -124,8 +128,8 @@ Set up Express project with TypeScript, installed dependencies, created director
 
 Update the phase and last_check fields after each iteration using sed:
 ```bash
-sed -i '' "s/^phase: .*/phase: \"$NEW_PHASE\"/" ~/.claude/director-mode.local.md
-sed -i '' "s/^last_check: .*/last_check: \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"/" ~/.claude/director-mode.local.md
+sed -i '' "s/^phase: .*/phase: \"$NEW_PHASE\"/" ./director-mode.local.md
+sed -i '' "s/^last_check: .*/last_check: \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"/" ./director-mode.local.md
 ```
 
 ## Decision Delegation
@@ -147,55 +151,9 @@ When the worker signals completion (returns to idle after producing results):
 
 ## Task Sequencing
 
-For complex tasks that could exhaust the worker's context window, the director decomposes the task into 2-7 sequential sub-tasks. Each sub-task runs in a clean worker context.
+For complex tasks that could exhaust the worker's context window, the director decomposes the task into 2-7 sequential sub-tasks. Each sub-task runs in a clean worker context (~200k token budget). Prior sub-task results are passed as compressed summaries, not full conversation history.
 
-### Decomposition
-
-During `/director-start`, evaluate whether the task is complex enough to warrant sequencing. Indicators of complexity:
-- Multiple distinct deliverables (e.g., "auth + CRUD + tests")
-- Tasks spanning different domains (frontend + backend + database)
-- Tasks that would require reading/writing many files
-
-If sequencing is warranted, break the task into 2-7 ordered sub-tasks and write them to the state file body under `## Sub-tasks`. Pass `--sequencing` to `setup-director.sh`.
-
-### Sub-task Execution Flow
-
-1. Send sub-task N to the worker, prefixed with: `"Sub-task N of M: <description>. Context from prior sub-tasks: <summaries>"`
-2. Monitor via the normal director loop until the worker reaches DONE
-3. Capture a completion summary from the worker's final output
-4. Update sub-task status to `[DONE]` and append summary to `## Completed Summaries`
-5. Send `/clear` to the worker and set `clearing: true` in state
-6. Enter CLEARING phase: poll until worker shows idle prompt
-7. Advance `current_subtask`, mark next sub-task `[IN_PROGRESS]`, send it to worker
-8. Repeat until all sub-tasks are done, then set `phase: all_done`
-
-### CLEARING Phase
-
-The CLEARING phase is a transitional state between sub-tasks:
-
-1. Set `clearing: true` in state file
-2. Send `/clear` to the worker
-3. Each check iteration: capture worker pane, look for idle prompt
-4. If idle: set `clearing: false`, advance to next sub-task
-5. If not idle after 3 iterations: resend `/clear`
-
-### Context Budgeting
-
-Each sub-task gets a fresh worker context (~200k token budget). Prior sub-task results are passed as compressed summaries, not full conversation history. This allows complex multi-step tasks to complete without context exhaustion.
-
-### Error Handling with Sequencing
-
-When a sub-task fails:
-1. Increment `retry_count` in state file
-2. If `retry_count <= max_retries`: send `/clear`, retry the sub-task
-3. If `retry_count > max_retries`: escalate to the user with options:
-   - **Skip**: Mark sub-task `[FAILED]`, advance to next
-   - **Stop**: Halt sequencing, report partial progress
-
-Use `update-subtask-status.sh` to update sub-task markers:
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/update-subtask-status.sh" 2 DONE "Implemented auth endpoints with JWT tokens."
-```
+Sequencing is warranted when the task has multiple distinct deliverables, spans different domains, or would require reading/writing many files. See `references/task-sequencing.md` for the full execution flow, CLEARING phase details, context budgeting, and error handling.
 
 ## Error Recovery
 
@@ -204,3 +162,13 @@ If the worker gets stuck in an error loop:
 2. Send `Escape` or `C-c` if needed to cancel the current operation
 3. Send corrective instructions
 4. If repeated failures, report to user and suggest manual intervention
+
+## References
+
+Consult these files for detailed implementation specifics:
+
+- `references/task-sequencing.md` — full sequencing execution flow, CLEARING phase, context budgeting, error handling with retries
+- `commands/director-start.md` — startup sequence, requirements gathering (Step 3.75), task decomposition
+- `commands/director-check.md` — phase classification indicators and action handlers for each phase
+- `commands/director-stop.md` — graceful shutdown, cleanup, hook removal
+- `agents/decision-maker.md` — decision-maker subagent input/output format, safety rules
