@@ -9,6 +9,9 @@
 
 set -euo pipefail
 
+# Derive plugin root from this script's location (hooks/ -> plugin root)
+PLUGIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
 STATE_FILE="./director-mode.local.md"
 
 # If director mode is not active, allow everything
@@ -55,7 +58,7 @@ case "$TOOL_NAME" in
     fi
 
     # Allow the plugin's own scripts
-    if echo "$COMMAND" | grep -q "${CLAUDE_PLUGIN_ROOT:-__no_match__}/scripts/"; then
+    if echo "$COMMAND" | grep -q "${PLUGIN_ROOT}/scripts/"; then
       exit 0
     fi
 
@@ -111,7 +114,7 @@ case "$TOOL_NAME" in
     fi
 
     # Allow reading the plugin's own source files
-    if echo "$FILE_PATH" | grep -q "${CLAUDE_PLUGIN_ROOT:-__no_match__}"; then
+    if echo "$FILE_PATH" | grep -q "${PLUGIN_ROOT}"; then
       exit 0
     fi
 
