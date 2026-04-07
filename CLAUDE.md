@@ -46,6 +46,14 @@ Projects using director mode should add `*.local.md` to `.gitignore`.
 2. Define input format, process, response format, safety rules
 3. Spawn from command prompts via the `Agent` tool
 
+## Versioning
+
+- Version lives in 3 files: `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `skills/director-mode/SKILL.md`
+- **Before every `git push`**: bump the patch version in all 3 files and add a CHANGELOG.md entry
+- A PreToolUse hook on Bash will block pushes if the latest commit is not a version bump
+- CHANGELOG.md follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format
+- Use semantic versioning: patch for fixes, minor for features, major for breaking changes
+
 ## Adding a Phase
 
 1. Add phase to classification table in `skills/director-mode/SKILL.md`
