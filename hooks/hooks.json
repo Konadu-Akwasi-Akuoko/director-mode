@@ -1,17 +1,3 @@
 {
-  "description": "Director mode hooks (guard is installed dynamically by setup-director.sh)",
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Check if this Bash command is a `git push`. If it IS a git push: 1) Check if the most recent commit message starts with 'chore: bump version to' — if so, the version is already bumped, return 'approve'. 2) Otherwise, BLOCK the push. Return a JSON decision: {\"decision\": \"block\", \"reason\": \"Version bump required before pushing. Bump the patch version in .claude-plugin/plugin.json, .claude-plugin/marketplace.json, and skills/director-mode/SKILL.md. Add a CHANGELOG.md entry for the new version. Commit the bump, then retry the push.\"}. If the command is NOT a git push, return 'approve' immediately.",
-            "timeout": 10
-          }
-        ]
-      }
-    ]
-  }
+  "description": "Director mode hooks (guard is installed dynamically by setup-director.sh)"
 }
