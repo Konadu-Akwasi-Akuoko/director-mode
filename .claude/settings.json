@@ -5,9 +5,9 @@
         "matcher": "Bash",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Check if this Bash command is a `git push` (but NOT `git push` inside a grep, echo, or string). If it IS a real git push command: check if the most recent commit message starts with 'chore: bump version to'. If yes, approve. If no, block with reason: 'Version bump required. Bump patch version in .claude-plugin/plugin.json, .claude-plugin/marketplace.json, skills/director-mode/SKILL.md. Add CHANGELOG.md entry. Commit as: chore: bump version to X.Y.Z'. If the command is NOT git push, approve immediately.",
-            "timeout": 10
+            "type": "command",
+            "command": "bash scripts/check-version-bump.sh",
+            "timeout": 5
           }
         ]
       }
