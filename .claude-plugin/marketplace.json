@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "director-mode",
-      "source": ".",
+      "source": "./",
       "description": "One Claude Code instance drives another via tmux, acting as a human-in-the-loop proxy for autonomous multi-session orchestration.",
       "version": "0.1.0",
       "author": {
