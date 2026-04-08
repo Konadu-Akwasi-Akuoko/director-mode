@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Director mode: autonomous multi-session Claude Code orchestration via tmux",
-    "version": "0.2.3"
+    "version": "0.2.4"
   },
   "plugins": [
     {
       "name": "director-mode",
       "source": "./",
       "description": "One Claude Code instance drives another via tmux, acting as a human-in-the-loop proxy for autonomous multi-session orchestration.",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "author": {
         "name": "Akwasi Konadu Akuoko"
       },

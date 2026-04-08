@@ -4,6 +4,16 @@ All notable changes to the director-mode plugin are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [0.2.4] - 2026-04-08
+
+### Fixed
+
+- Added missing `hooks` record to `hooks/hooks.json`. Claude Code requires this key even when hooks are installed dynamically; its absence caused a plugin load error.
+
+### Changed
+
+- Added `marketing/` to `.gitignore`
+
 ## [0.2.3] - 2026-04-07
 
 ### Fixed
