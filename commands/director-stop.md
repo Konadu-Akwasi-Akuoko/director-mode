@@ -56,11 +56,7 @@ Reset the tmux window name and status bar color:
 
 ## Step 5: Clean Up State
 
-Remove the guard hook from project settings, then remove the state file:
-
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/cleanup-director.sh"
-```
+Remove the state file (the guard hook is static in hooks.json and self-deactivates when no state file exists):
 
 ```bash
 rm "./director-mode.local.md"

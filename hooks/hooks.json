@@ -1,4 +1,16 @@
 {
-  "description": "Director mode hooks (guard is installed dynamically by setup-director.sh)",
-  "hooks": {}
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Write|Edit|Bash|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/director-guard.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
 }

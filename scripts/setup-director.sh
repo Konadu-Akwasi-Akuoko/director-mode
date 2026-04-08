@@ -63,31 +63,8 @@ Task: $TASK
 (populated as sub-tasks complete)
 EOF
 
-# Install director guard hook into project settings
-SETTINGS_FILE=".claude/settings.local.json"
-mkdir -p .claude
-
-# Read existing settings or start fresh
-if [[ -f "$SETTINGS_FILE" ]]; then
-  EXISTING=$(cat "$SETTINGS_FILE")
-else
-  EXISTING='{}'
-fi
-
-# Merge in the director guard hook
-echo "$EXISTING" | jq --arg guard "${PLUGIN_ROOT}/hooks/director-guard.sh" '
-  .hooks.PreToolUse = [{
-    "matcher": "Read|Write|Edit|Bash|MultiEdit",
-    "hooks": [{
-      "type": "command",
-      "command": ("bash \"" + $guard + "\""),
-      "timeout": 5
-    }]
-  }]
-' > "$SETTINGS_FILE"
-
 echo "Director mode initialized."
 echo "  Worker target: $WORKER_TARGET"
 echo "  State file: $STATE_FILE"
-echo "  Guard hook: installed in $SETTINGS_FILE"
+echo "  Guard hook: registered in hooks/hooks.json (static)"
 echo "  Tmux status: RED (director active)"
