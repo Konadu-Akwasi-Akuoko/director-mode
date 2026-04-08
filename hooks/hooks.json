@@ -1,3 +1,4 @@
 {
-  "description": "Director mode hooks (guard is installed dynamically by setup-director.sh)"
+  "description": "Director mode hooks (guard is installed dynamically by setup-director.sh)",
+  "hooks": {}
 }
