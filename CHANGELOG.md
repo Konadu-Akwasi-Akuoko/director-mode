@@ -4,6 +4,18 @@ All notable changes to the director-mode plugin are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [0.2.5] - 2026-04-08
+
+### Fixed
+
+- Registered guard hook statically in `hooks/hooks.json` instead of dynamically via `settings.local.json`. The empty `"hooks": {}` record failed Claude Code's Zod schema validation. Removed ~50 lines of dynamic install/cleanup machinery.
+
+### Removed
+
+- Dynamic hook installation from `setup-director.sh` (jq writes to `settings.local.json`)
+- Dynamic hook cleanup from `cleanup-director.sh` (now a no-op stub)
+- `cleanup-director.sh` call from `director-stop.md` Step 5
+
 ## [0.2.4] - 2026-04-08
 
 ### Fixed
