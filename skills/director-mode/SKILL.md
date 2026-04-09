@@ -1,7 +1,7 @@
 ---
 name: director-mode
 description: "Orchestrate another Claude Code instance via tmux. This skill should be used when the user says 'director mode', 'orchestrate', 'drive the other claude', 'manage the worker', 'delegate to the other session', 'multi-session', 'send this to the other claude', 'supervise the worker', or wants one Claude session to autonomously direct another."
-version: 0.2.5
+version: 0.3.0
 ---
 
 # Director Mode
@@ -45,7 +45,8 @@ Parse the captured output to determine the worker's current phase:
 | **PLANNING** | Shows plan text, "Plan:" header, numbered steps | Wait for plan completion, answer questions |
 | **ASKING** | Shows `?`, asks for input, permission prompts, "y/n" | Spawn decision-maker subagent, send answer |
 | **AWAITING_APPROVAL** | Shows plan summary, "approve"/"accept" prompts | Review plan, send approval |
-| **IMPLEMENTING** | Shows tool calls (Read, Write, Edit, Bash), spinners, progress | Monitor, intervene only if stuck |
+| **IMPLEMENTING** | Shows tool calls (Read, Write, Edit, Bash), spinners, progress | Monitor, intervene only if stuck (use stale-output tracking) |
+| **IMPLEMENTING (background)** | "Backgrounded agent", agent status notifications, prompt visible but agents running | Treat as IMPLEMENTING — do NOT send new tasks |
 | **DONE** | Shows completion message, summary, returns to `>` prompt | Capture results, report to user |
 | **ERROR** | Shows error messages, stack traces, "failed" | Diagnose and send corrective instructions |
 | **PERMISSION_PROMPT** | Shows "Allow"/"Deny" tool permission dialog | Send "y" to approve safe operations |
@@ -109,6 +110,8 @@ subtask_count: 0
 retry_count: 0
 max_retries: 1
 clearing: false
+last_capture_hash: ""
+stale_count: 0
 ---
 ```
 
@@ -172,3 +175,5 @@ Consult these files for detailed implementation specifics:
 - `commands/director-check.md` — phase classification indicators and action handlers for each phase
 - `commands/director-stop.md` — graceful shutdown, cleanup, hook removal
 - `agents/decision-maker.md` — decision-maker subagent input/output format, safety rules
+- `commands/director-review.md` — post-run analysis engine, writes review files and updates improvement backlog
+- `agents/session-analyzer.md` — JSONL session log reader, extracts structured events for review

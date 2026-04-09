@@ -41,7 +41,8 @@ Analyze the captured output. Look for these indicators:
 - **ASKING**: Question marks, "?" in output, asks for clarification, "Which...", "Should I..."
 - **AWAITING_APPROVAL**: Plan summary shown, accept/reject prompt
 - **IMPLEMENTING**: Tool calls visible (Read, Write, Edit, Bash), spinners, file paths in output
-- **DONE**: Completion message, summary of work, back to `>` prompt after having done work
+- **IMPLEMENTING (background)**: Output contains "Backgrounded agent", "running in background", agent status notifications, or "agent completed" messages. The worker may appear idle (prompt visible) but background agents are still running. Treat as IMPLEMENTING — do NOT send new tasks or classify as DONE.
+- **DONE**: Completion message, summary of work, back to `>` prompt after having done work AND no background agents are running
 - **ERROR**: Error messages, stack traces, "failed", "error"
 - **PERMISSION_PROMPT**: "Allow"/"Deny" dialog, tool permission request
 
@@ -76,17 +77,43 @@ The worker has a plan ready. Review it briefly — does it make sense for the ta
 ```
 
 ### IMPLEMENTING
-Worker is actively working. Do nothing — wait for the next iteration.
-If the output looks stuck (identical to last capture for 3+ iterations), send:
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "Continue with the task. If stuck, try a different approach."
-```
+Worker is actively working. Track output staleness to detect stuck states:
+
+1. Compute a hash of the captured output:
+   ```bash
+   CAPTURE_HASH=$(cat /tmp/director-worker-capture.txt | md5 -q)
+   ```
+2. Read `last_capture_hash` from the state file.
+3. **If hashes match** — increment `stale_count`:
+   ```bash
+   CURRENT_STALE=$(sed -n 's/^stale_count: //p' "./director-mode.local.md")
+   NEW_STALE=$((CURRENT_STALE + 1))
+   sed -i '' "s/^stale_count: .*/stale_count: $NEW_STALE/" "./director-mode.local.md"
+   ```
+4. **If hashes differ** — reset `stale_count` to 0 and update the stored hash:
+   ```bash
+   sed -i '' "s/^stale_count: .*/stale_count: 0/" "./director-mode.local.md"
+   sed -i '' "s/^last_capture_hash: .*/last_capture_hash: \"$CAPTURE_HASH\"/" "./director-mode.local.md"
+   ```
+5. **If `stale_count >= 3`** — the worker is stuck. Send a nudge and reset:
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "Continue with the task. If stuck, try a different approach."
+   ```
+   ```bash
+   sed -i '' "s/^stale_count: .*/stale_count: 0/" "./director-mode.local.md"
+   ```
+
+If `stale_count < 3`, do nothing — wait for the next iteration.
 
 ### DONE
 
 Check if sequencing is active by reading the `sequencing` field from the state file.
 
-**Without sequencing:** Worker completed the task. Capture final output and report a summary to the user.
+**Without sequencing:** Worker completed the task. Capture final output, run the post-run review, then report a summary to the user.
+   - **Post-run review**: Before reporting completion, invoke the director-review command:
+     ```
+     /director-mode:director-review
+     ```
 
 **With sequencing:** The current sub-task is complete. Transition to the CLEARING phase:
 
@@ -95,7 +122,12 @@ Check if sequencing is active by reading the `sequencing` field from the state f
    ```bash
    "${CLAUDE_PLUGIN_ROOT}/scripts/update-subtask-status.sh" SUBTASK_NUM DONE "completion summary here"
    ```
-3. Check if this was the last sub-task. If `current_subtask + 1 >= subtask_count`, set `phase: all_done` and report full completion to the user. Stop.
+3. Check if this was the last sub-task. If `current_subtask + 1 >= subtask_count`, set `phase: all_done`, run the post-run review, then report full completion to the user. Stop.
+   - **Post-run review**: Before stopping, invoke the director-review command to analyze this session:
+     ```
+     /director-mode:director-review
+     ```
+     This writes a review file and updates the improvement backlog in the director-mode source repo.
 4. Otherwise, send `/clear` to the worker:
    ```bash
    "${CLAUDE_PLUGIN_ROOT}/scripts/send-to-worker.sh" "/clear"

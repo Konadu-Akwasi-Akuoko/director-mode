@@ -50,6 +50,8 @@ subtask_count: 0
 retry_count: 0
 max_retries: 1
 clearing: false
+last_capture_hash: ""
+stale_count: 0
 ---
 
 Director mode active.

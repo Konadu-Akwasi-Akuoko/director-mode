@@ -43,6 +43,7 @@ One Claude Code instance orchestrates another via tmux, acting as a human-in-the
 | `/director-check` | Run a single director loop iteration (normally called by the loop) |
 | `/director-status` | Show current phase, iteration count, worker snapshot, and sequencing progress |
 | `/director-stop` | Graceful shutdown: notify worker, reset tmux visuals, remove state file |
+| `/director-review` | Post-run analysis: write review file and update improvement backlog |
 
 ## Architecture
 
@@ -112,12 +113,14 @@ director-mode/
 │   ├── plugin.json          # Plugin manifest (name, version, description)
 │   └── marketplace.json     # Marketplace metadata
 ├── agents/
-│   └── decision-maker.md    # Subagent: answers worker questions using project context
+│   ├── decision-maker.md    # Subagent: answers worker questions using project context
+│   └── session-analyzer.md  # Subagent: reads JSONL session logs for post-run analysis
 ├── commands/
 │   ├── director-start.md    # /director-start — init, session selection, task dispatch
 │   ├── director-check.md    # /director-check — single loop iteration (capture/classify/act)
 │   ├── director-status.md   # /director-status — show phase, progress, worker snapshot
-│   └── director-stop.md     # /director-stop — graceful shutdown and cleanup
+│   ├── director-stop.md     # /director-stop — graceful shutdown and cleanup
+│   └── director-review.md   # /director-review — post-run analysis and improvement backlog
 ├── hooks/
 │   ├── hooks.json           # Hook registration (PreToolUse matcher for guard)
 │   └── director-guard.sh    # Blocks direct file access when director mode is active
@@ -128,6 +131,8 @@ director-mode/
 │   ├── capture-worker.sh        # Capture last 200 lines of worker pane output
 │   ├── send-to-worker.sh        # Send literal text + Enter to worker pane
 │   └── update-subtask-status.sh # Update sub-task status in state file body
+├── reviews/                         # Post-run review files (one per director run)
+├── improvement-backlog.md           # Consolidated actionable items from all reviews
 ├── CLAUDE.md                        # Developer conventions and guide
 ├── skills/
 │   └── director-mode/
@@ -145,7 +150,7 @@ director-mode/
                 ──> list-tmux-sessions.sh
                 ──> setup-director.sh ──> creates ./director-mode.local.md
                 ──> send-to-worker.sh
-                ──> /loop 30s /director-check
+                ──> /loop 30s /director-mode:director-check
 
 /director-check ──> reads state file (phase, worker_target, task)
                 ──> capture-worker.sh ──> tmux capture-pane

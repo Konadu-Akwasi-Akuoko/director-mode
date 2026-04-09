@@ -17,7 +17,7 @@
 
 YAML frontmatter (structured) + markdown body (free-form). Updated via `sed -i ''` (macOS, no backup suffix).
 
-Fields: `active`, `worker_target`, `task`, `phase`, `iteration`, `started_at`, `last_check`, `session_id`, `sequencing`, `current_subtask`, `subtask_count`, `retry_count`, `max_retries`, `clearing`
+Fields: `active`, `worker_target`, `task`, `phase`, `iteration`, `started_at`, `last_check`, `session_id`, `sequencing`, `current_subtask`, `subtask_count`, `retry_count`, `max_retries`, `clearing`, `last_capture_hash`, `stale_count`
 
 Projects using director mode should add `*.local.md` to `.gitignore`.
 
