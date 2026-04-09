@@ -4,6 +4,20 @@ All notable changes to the director-mode plugin are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-04-09
+
+### Added
+
+- **Post-run self-review**: After every completed director-mode run, a review file is automatically written to `reviews/YYYY-MM-DD-<project>.md` analyzing what worked, what failed, and proposed fixes. An `improvement-backlog.md` accumulates actionable items across runs.
+- `commands/director-review.md` — post-run analysis command that orchestrates the review
+- `agents/session-analyzer.md` — subagent that parses JSONL session logs and extracts structured events
+- **Background agent detection**: New IMPLEMENTING (background) phase indicator prevents the director from misclassifying workers with backgrounded agents as idle/done
+- **Stale-output tracking**: New `last_capture_hash` and `stale_count` state fields enable deterministic stuck-detection. The director now hashes each capture and only nudges the worker after 3+ consecutive identical outputs.
+
+### Fixed
+
+- **Critical**: `/loop 30s /director-check` used unqualified skill name, causing "Unknown skill" errors on every iteration. Fixed to `/loop 30s /director-mode:director-check`. This was the root cause of a 100+ iteration broken loop in the April 9 WorkLog session.
+
 ## [0.2.5] - 2026-04-08
 
 ### Fixed
