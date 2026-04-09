@@ -146,10 +146,10 @@ If this is a complex task (sequencing or not), instruct the worker to plan first
 Now start a recurring loop to monitor the worker. Use the `/loop` skill with a 30-second interval, invoking the `/director-check` command each iteration:
 
 ```
-/loop 30s /director-check
+/loop 30s /director-mode:director-check
 ```
 
 Tell the user director mode is active and they can:
-- `/director-status` — check current state
-- `/director-stop` — graceful shutdown
-- `/director-check` — run a single manual check
+- `/director-mode:director-status` — check current state
+- `/director-mode:director-stop` — graceful shutdown
+- `/director-mode:director-check` — run a single manual check
